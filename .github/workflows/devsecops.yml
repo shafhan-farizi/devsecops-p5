@@ -70,9 +70,6 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Security Scan using Semgrep
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/default
-            p/php
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/src" semgrep/semgrep semgrep scan --config=auto
         continue-on-error: true
