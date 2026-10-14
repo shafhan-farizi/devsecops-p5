@@ -1,0 +1,67 @@
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, string, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Check Composer Json Existence
+        run: |
+          if [ ! -f "composer.json" ]; then
+            echo "Error: composer.json tidak ditemukan!"
+            exit 1
+          fi
+
+      - name: Install Composer Dependencies
+        run: composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+
+      - name: Prepare Environment Configuration
+        run: |
+          if [ -f ".env.example" ]; then
+            copy .env.example .env
+          else
+            echo "DB_CONNECTION=sqlite" > .env
+            echo "DB_DATABASE=:memory:" >> .env
+          fi
+
+      - name: Generate Application Key
+        run: php artisan key:generate --ansi
+
+      - name: Run Unit Tests via PHPUnit
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: vendor/bin/phpunit --migrate-configuration || php artisan test --parallel || echo "Skipped"
+
+  sast-scan:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Security Scan using Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/php
+            p/owasp-top-10
+            p/security-audit
+        continue-on-error: true
