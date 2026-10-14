@@ -72,4 +72,3 @@ jobs:
       - name: Security Scan using Semgrep
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" semgrep/semgrep semgrep scan --config=auto
-        continue-on-error: true
