@@ -73,7 +73,6 @@ jobs:
         uses: semgrep/semgrep-action@v1
         with:
           config: >-
+            p/default
             p/php
-            p/owasp-top-10
-            p/security-audit
         continue-on-error: true
